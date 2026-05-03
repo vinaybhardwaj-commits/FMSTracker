@@ -1,0 +1,13 @@
+licence_id,item,authority,current_expiry,days_to_expiry,lead_time_180d_action,lead_time_90d_action,lead_time_30d_action,status,source_doc
+S-01,Fire NOC,Karnataka State Fire & Emergency Services,TBD,TBD,yellow trigger,orange trigger,red trigger,TBD,Fire Advice Even Hospitals 250626 (project)
+S-02,KSPCB CFO,KSPCB,TBD,TBD,yellow,orange,red,TBD,KSPCB_ClearanceCFO__BMWEven_Hospitals.pdf (project)
+S-03,KPME Registration,Karnataka Health Dept,TBD,TBD,yellow,orange,red,TBD,KPME_Registration.jpeg (project)
+S-04,BMW Authorization,KSPCB,TBD,TBD,yellow,orange,red,TBD,Combined with CFO doc
+S-05,Narcotics Licence,Drugs Controller Karnataka,TBD,TBD,yellow,orange,red,TBD,Narcotics_Licence.pdf (project)
+S-06,AERB Licence (CT),Atomic Energy Regulatory Board,TBD,TBD,yellow,orange,red,TBD,Per Drive AERB folder
+S-07,PCPNDT Licence,District Health Officer,TBD,TBD,yellow,orange,red,TBD,PCPNDT_Licence.pdf (project)
+S-08,BBMP Trade Licence,BBMP,TBD,TBD,yellow,orange,red,TBD,Trade_Licence.pdf (project)
+S-09,Lift Inspection Certificate,Inspectorate of Factories Karnataka,TBD,TBD,yellow,orange,red,TBD,Per FMS.1.a
+S-10,Electrical Safety Audit Cert,Class I Electrical Contractor,TBD,TBD,yellow,orange,red,TBD,Per FMS.3.c
+S-11,Structural Safety Cert,Qualified Structural Engineer,TBD,TBD,yellow,orange,red,TBD,Per FMS.3.b
+S-12,B64 Drug Licence,Drugs Controller Karnataka,TBD,TBD,yellow,orange,red,TBD,Balloon_Healthcare__B64_License_Approval_Letter.pdf (project)

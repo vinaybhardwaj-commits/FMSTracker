@@ -1,0 +1,47 @@
+asset_id,system,name,floor,sub_location,count,criticality,notes
+L-001,Fire Safety,Main Fire Panel,GF,Reception/Security,1,critical,
+L-002,Fire Safety,Fire Extinguishers,All,Per floor — count TBD with Charan,TBD,critical,Charan to populate per-floor count
+L-003,Fire Safety,Fire Hose Reels,All,Corridors,TBD,critical,Charan to populate
+L-004,Fire Safety,Smoke Detectors,All,Zones — count per floor,TBD,critical,Charan to populate per zone
+L-005,Fire Safety,Emergency Lights,All,Per corridor + stairwell,TBD,high,Charan to populate
+L-006,Fire Safety,Fire Pump,Pump Room,Below GF / Service area,1,critical,
+L-007,Fire Safety,Fire Hydrants,All,Per floor,TBD,high,Charan to populate
+L-008,MGPS,Oxygen Manifold (Left+Right),Manifold Room,Service area,1,critical,"Dual bank, 3x 50kg per bank"
+L-009,MGPS,Type-B Cylinders,ICU/OT/ER/Wards,Multiple bedside,TBD,critical,Per FMS.6.d distribution
+L-010,MGPS,IR Compressor #1,Plant Room,Service,1,critical,
+L-011,MGPS,IR Compressor #2,Plant Room,Service,1,critical,
+L-012,MGPS,Single-stage Vacuum Pump,Plant Room,Service,1,critical,
+L-013,MGPS,Two-stage Vacuum Pump,Plant Room,Service,1,critical,
+L-014,MGPS,Standalone Vacuum (0.5/1 HP),OT/ICU/Wards,Bedside,TBD,high,Charan + Anaesth to confirm count
+L-015,MGPS,Bed Head Panels,Patient Care Areas,Per bed,TBD,medium,Charan to populate
+L-016,MGPS,Zone Isolation Valves,All,Per floor,TBD,high,Charan to populate
+L-017,Electrical,Main LT Panel,Electrical Room,Service area,1,critical,
+L-018,Electrical,Cummins DG #1 (250 kVA),DG Room,Service area,1,critical,
+L-019,Electrical,Cummins DG #2 (250 kVA),DG Room,Service area,1,critical,
+L-020,Electrical,UPS System (360 kVA total),UPS Room,Service area,TBD,critical,Charan to confirm number of UPS units
+L-021,Electrical,Distribution Boards,All,Per floor,TBD,high,Charan to populate
+L-022,Electrical,Earth Pits,Yard,External,TBD,high,Charan to populate
+L-023,Water,Underground Tank,UG Tank Room,Below GF,1,critical,Per FMS.2.d
+L-024,Water,Overhead Tank,Roof,Top,1,critical,Per FMS.2.d
+L-025,Water,BWSSB Inlet,Inlet Point,External,1,critical,
+L-026,Water,Borewell,Pump Yard,External,TBD,high,Charan to confirm operational
+L-027,Water,Tanker Bay,External,Outside,1,medium,FMS.2.e backup
+L-028,HVAC,VRF Outdoor Units (Carrier+Toshiba),Roof,Top,TBD,critical,Charan to populate ODU count
+L-029,HVAC,OT 1 AHU,3F,OT zone,1,critical,
+L-030,HVAC,OT 2 AHU,3F,OT zone,1,critical,
+L-031,HVAC,OT 3 AHU,3F,OT zone,1,critical,
+L-032,HVAC,ICU AHU,3F,ICU zone,1,critical,
+L-033,HVAC,Indoor Units,All,Per zone,TBD,medium,Charan to populate
+L-034,Lifts,Lift 1 (Passenger),All floors,Lobby,1,high,Per FMS.1.a
+L-035,Lifts,Lift 2 (Passenger),All floors,Lobby,1,high,Per FMS.1.a
+L-036,Lifts,Lift 3 (Patient),All floors,Lobby,1,critical,Per FMS.1.a / FMS.1.b
+L-037,Plumbing,Sluice Rooms,Per floor,Per floor,5,high,One per floor
+L-038,Plumbing,STP / Sewer Connection,STP Yard / Sewer,External,TBD,medium,Confirm STP vs sewer connect
+L-039,Building,Main Entrance Ramp,GF,Outside main entrance,1,high,Per FMS.1.b
+L-040,Building,ER Entrance Ramp,GF,Outside ER entrance,1,high,Per FMS.1.b
+L-041,Building,Disabled Washroom GF,GF,Public area,1,high,Per FMS.1.b
+L-042,Hazmat & BMW,BMW Storage Area,GF / Service,External,1,critical,Per FMS.3.e
+L-043,Hazmat & BMW,Chemical Stores,Stores,Per dept,TBD,high,Charan + HK to populate
+L-044,Hazmat & BMW,Spill Kits,Lab/Stores/BMW/Engg,Per area,TBD,high,Per FMS.3.f
+L-045,Security,Security Room / CCTV,GF,Reception,1,high,Per FMS.3.a
+L-046,Security,CCTV Cameras,All,Per zone,TBD,high,Charan to populate count

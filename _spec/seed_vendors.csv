@@ -1,0 +1,26 @@
+vendor_id,system,vendor_name,contact_name,phone,email,visit_cadence,scope_notes
+V-01,Fire Safety,Fire system AMC vendor,TBD,TBD,TBD,Annual,"extinguishers, panel, pump"
+V-02,Fire Safety,Fire extinguisher refilling vendor,TBD,TBD,TBD,Per refill cycle,Per extinguisher refill date
+V-03,MGPS,Green ASU Plant,TBD,TBD,TBD,Annual,"Original installer, MGPS recertification"
+V-04,MGPS,Kumar's (Manifold OEM),TBD,TBD,TBD,Per service,Auto-changeover system
+V-05,MGPS,Ingersoll Rand AMC,TBD,TBD,TBD,Quarterly,Compressors + vacuum pumps
+V-06,Electrical,Cummins AMC,TBD,TBD,TBD,Quarterly + Annual,DG sets — 2x 250 kVA
+V-07,Electrical,UPS AMC vendor,TBD,TBD,TBD,Quarterly,UPS systems 360 kVA total
+V-08,Electrical,Class I Electrical Contractor,TBD,TBD,TBD,Annual,Electrical safety audit + earthing
+V-09,Water,Tank cleaning vendor,TBD,TBD,TBD,Quarterly,UG + OH tank disinfection
+V-10,Water,NABL water testing lab,TBD,TBD,TBD,Quarterly,Microbial + chemical IS:10500
+V-11,HVAC,Carrier / Toshiba AMC,TBD,TBD,TBD,Quarterly,VRF system service
+V-12,HVAC,HEPA / OT validation agency,TBD,TBD,TBD,Annual,OT particle count + ACH validation
+V-13,Lifts,Lift OEM / AMC,TBD,TBD,TBD,Monthly + Annual,3 lifts (2 pax + 1 patient)
+V-14,Lifts,Inspectorate of Factories Karnataka,Bengaluru,Govt,Govt,Annual,Statutory lift fitness inspection
+V-15,Plumbing,STP O&M vendor,TBD,TBD,TBD,Monthly,If STP onsite — confirm with Charan
+V-16,Hazmat & BMW,BMW transporter (KSPCB-authorized),TBD,TBD,TBD,Per pickup,Pickup schedule per agreement
+V-17,Pest Control,Pest control vendor,TBD,TBD,TBD,Monthly + Quarterly,Routine + fogging
+V-18,Building,Structural engineer,TBD,TBD,TBD,Annual / Event,Structural safety assessment
+V-19,Statutory,Karnataka State Fire & Emergency Services,Bengaluru,Govt,Govt,Annual,Fire NOC renewal
+V-20,Statutory,KSPCB,Bengaluru,Govt,Govt,Annual,CFO + BMW authorization
+V-21,Statutory,Atomic Energy Regulatory Board,Mumbai,Govt,Govt,Per cycle,CT scanner radiation licence + RSO
+V-22,Statutory,BBMP,Bengaluru,Govt,Govt,Annual,Trade licence
+V-23,Statutory,Drugs Controller Karnataka,Bengaluru,Govt,Govt,Annual,Narcotics licence
+V-24,Statutory,Karnataka Health Dept (KPME),Bengaluru,Govt,Govt,Annual,KPME hospital registration
+V-25,Statutory,District Health Officer,Bengaluru,Govt,Govt,Annual,PCPNDT licence
