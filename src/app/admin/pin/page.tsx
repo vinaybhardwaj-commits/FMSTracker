@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const KEYS: ReadonlyArray<string> = [
@@ -19,6 +19,14 @@ const KEYS: ReadonlyArray<string> = [
 ];
 
 export default function PinEntryPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen" />}>
+      <PinEntryInner />
+    </Suspense>
+  );
+}
+
+function PinEntryInner() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/admin";
