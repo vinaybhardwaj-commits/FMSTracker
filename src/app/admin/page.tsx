@@ -77,11 +77,11 @@ export default async function AdminHomePage() {
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Tile href="/admin/tasks" emoji="📋" title="Tasks" meta={`${counts.tasks} active`} />
-        <Tile href="/admin/locations" emoji="📍" title="Locations" meta={`${counts.locations}`} disabled />
-        <Tile href="/admin/vendors" emoji="🤝" title="Vendors" meta={`${counts.vendors}`} disabled />
-        <Tile href="/admin/statutory" emoji="📜" title="Statutory" meta={`${counts.statutory}`} disabled />
-        <Tile href="/admin/audit" emoji="🗒" title="Audit log" meta="Phase 4" disabled />
-        <Tile href="/admin/import-export" emoji="⇅" title="Import / Export" meta="Phase 4" disabled />
+        <Tile href="/admin/locations" emoji="📍" title="Locations" meta={`${counts.locations}`} />
+        <Tile href="/admin/vendors" emoji="🤝" title="Vendors" meta={`${counts.vendors}`} />
+        <Tile href="/admin/statutory" emoji="📜" title="Statutory" meta={`${counts.statutory}`} />
+        <Tile href="/admin/audit" emoji="🗒" title="Audit log" />
+        <Tile href="/admin/import-export" emoji="⇅" title="Import / Export" meta="Phase 5" disabled />
       </div>
 
       <div className="mt-8 text-xs text-slate-400">

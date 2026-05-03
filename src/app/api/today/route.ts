@@ -59,9 +59,10 @@ export async function GET() {
     SELECT id, licence_id, item, current_expiry::text AS current_expiry
     FROM statutory_items WHERE active = TRUE
   `;
-  const urgent = stat
-    .map((s) => ({ ...s, ...tierForExpiry(s.current_expiry) }))
-    .filter((s) => isUrgent(s.tier));
+  const tiered = stat.map((s) => ({ ...s, ...tierForExpiry(s.current_expiry) }));
+  const urgent = tiered.filter((s) => isUrgent(s.tier));
+  // Yellow + orange surface in today list as cards (PRD §3.3)
+  const upcoming_statutory = tiered.filter((s) => s.tier === "yellow" || s.tier === "orange");
 
   const rings = await fetchRingsData();
 
@@ -69,6 +70,7 @@ export async function GET() {
     today,
     instances,
     urgent_statutory: urgent,
+    upcoming_statutory,
     rings,
   });
 }

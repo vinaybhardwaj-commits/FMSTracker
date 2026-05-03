@@ -18,6 +18,7 @@ interface TodayPayload {
   today: string;
   instances: TaskCardData[];
   urgent_statutory: StatutoryUrgent[];
+  upcoming_statutory?: Array<{ id: number; item: string; tier: "yellow" | "orange"; days: number | null }>;
   rings?: RingsData;
 }
 
@@ -118,6 +119,31 @@ export function TodayPage({ device }: { device: LocalDevice }) {
             {todayDue.map((t) => (
               <TaskCard key={t.id} task={t} myDeviceUuid={device.device_uuid} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Upcoming statutory (yellow + orange tier — surfaced per PRD §3.3) */}
+      {data && (data.upcoming_statutory ?? []).length > 0 && (
+        <section className="mt-3">
+          <SectionHeader label="Upcoming statutory" count={(data.upcoming_statutory ?? []).length} tint="default" />
+          <div className="mx-4 space-y-2 pb-2">
+            {(data.upcoming_statutory ?? []).map((s) => {
+              const tone = s.tier === "orange" ? "border-orange-300 bg-orange-50" : "border-yellow-300 bg-yellow-50";
+              const verb = s.tier === "orange" ? "Start renewal" : "Plan vendor coordination";
+              return (
+                <a
+                  key={s.id}
+                  href={`/admin/statutory/${s.id}`}
+                  className={`block rounded-2xl border bg-white p-3 ${tone}`}
+                >
+                  <div className="text-[15px] font-semibold text-ehrc-navy">📜 {s.item}</div>
+                  <div className="mt-0.5 text-[12px] text-slate-600">
+                    {s.days} days to expiry · {verb}
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </section>
       )}
