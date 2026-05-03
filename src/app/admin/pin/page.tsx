@@ -68,7 +68,7 @@ function PinEntryInner() {
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.ok) {
           navigatedRef.current = true;
-          router.replace(next);
+          window.location.replace(next);
           return;
         }
         if (res.status === 429) {
