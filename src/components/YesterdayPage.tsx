@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WorkerShell } from "./WorkerShell";
 import { SystemBadge } from "./SystemBadge";
+import { PhotoGalleryModal } from "./PhotoGalleryModal";
 import { systemMeta } from "@/lib/system-colors";
 import type { LocalDevice } from "@/lib/device";
 import type { RingsData } from "./ProgressRings";
@@ -69,6 +70,7 @@ export function YesterdayPage({ device, rings }: { device: LocalDevice; rings: R
   const [data, setData] = useState<RecapPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [galleryItem, setGalleryItem] = useState<RecapItem | null>(null);
 
   async function load() {
     setLoading(true);
@@ -149,10 +151,27 @@ export function YesterdayPage({ device, rings }: { device: LocalDevice; rings: R
       {data && data.done.length > 0 && (
         <Section id="done" label="Done" count={data.done.length}>
           {data.done.map((it, i) => (
-            <DoneRow key={it.id} item={it} alt={i % 2 === 1} />
+            <DoneRow key={it.id} item={it} alt={i % 2 === 1} onTap={() => setGalleryItem(it)} />
           ))}
         </Section>
       )}
+
+      <PhotoGalleryModal
+        open={galleryItem !== null}
+        title={galleryItem?.task_name ?? ""}
+        subtitle={galleryItem ? `${galleryItem.completed_by_name ?? ""} · ${formatTime(galleryItem.completed_at)}` : ""}
+        items={
+          galleryItem
+            ? [
+                ...(galleryItem.selfie_url ? [{ url: galleryItem.selfie_url, isSelfie: true }] : []),
+                ...(galleryItem.photo_urls ?? []).map((u) => ({ url: u })),
+              ]
+            : []
+        }
+        reading={galleryItem?.reading_value ?? null}
+        vendorDue={null}
+        onClose={() => setGalleryItem(null)}
+      />
 
       {data && data.skipped.length > 0 && (
         <Section id="skipped" label="Skipped" count={data.skipped.length}>
@@ -214,13 +233,13 @@ function Section({ id, label, count, children }: { id: string; label: string; co
   );
 }
 
-function DoneRow({ item, alt }: { item: RecapItem; alt: boolean }) {
+function DoneRow({ item, alt, onTap }: { item: RecapItem; alt: boolean; onTap: () => void }) {
   const meta = systemMeta(item.system);
   const photos = item.photo_urls ?? [];
   const visible = photos.slice(0, 3);
   const moreCount = Math.max(0, photos.length - visible.length);
   return (
-    <div className={`flex gap-2 rounded-xl p-2 ring-1 ring-slate-200 ${alt ? "bg-slate-50" : "bg-white"}`}>
+    <button onClick={onTap} className={`flex w-full gap-2 rounded-xl p-2 text-left ring-1 ring-slate-200 ${alt ? "bg-slate-50" : "bg-white"}`}>
       <div className="w-1 shrink-0 rounded-full" style={{ background: meta.hex }} />
       <div className="flex-1 min-w-0">
         <div className="line-clamp-1 text-[14px] text-ehrc-navy">{item.task_name}</div>
@@ -239,7 +258,7 @@ function DoneRow({ item, alt }: { item: RecapItem; alt: boolean }) {
           {item.completed_by_name || "—"} · {formatTime(item.completed_at)}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 

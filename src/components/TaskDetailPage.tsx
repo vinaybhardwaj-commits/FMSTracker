@@ -14,6 +14,7 @@ import { WorkerShell } from "./WorkerShell";
 import { SystemBadge } from "./SystemBadge";
 import { SkipReasonModal } from "./SkipReasonModal";
 import { ReleaseClaimModal } from "./ReleaseClaimModal";
+import { PhotoGalleryModal } from "./PhotoGalleryModal";
 import { systemMeta } from "@/lib/system-colors";
 import { type LocalDevice } from "@/lib/device";
 import type { RingsData } from "./ProgressRings";
@@ -77,6 +78,7 @@ export function TaskDetailPage({
   const [refExpanded, setRefExpanded] = useState(false);
   const [skipOpen, setSkipOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function load() {
@@ -156,9 +158,8 @@ export function TaskDetailPage({
   }
 
   function startCompletion() {
-    // Phase 3 lands the actual capture flow at /instance/[id]/complete/selfie.
-    // For Phase 2 we surface a friendly note.
-    alert("Capture flow (selfie + photos) ships in Phase 3. Engine + claim work fully now; completion arrives next.");
+    if (!instance) return;
+    router.push(`/instance/${instance.id}/complete/selfie` as never);
   }
 
   if (loading) {
@@ -241,7 +242,11 @@ export function TaskDetailPage({
 
           {/* Done-state proof */}
           {isDone && (
-            <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3">
+            <button
+              type="button"
+              onClick={() => setGalleryOpen(true)}
+              className="mt-4 block w-full rounded-xl border border-green-200 bg-green-50 p-3 text-left hover:bg-green-100"
+            >
               <div className="text-sm font-semibold text-green-800">
                 ✓ Done at {formatTime(instance.completed_at)} by {instance.completed_by_name}
               </div>
@@ -256,7 +261,8 @@ export function TaskDetailPage({
                   <img key={i} src={url} alt={`Proof ${i + 1}`} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
                 ))}
               </div>
-            </div>
+              <div className="mt-1 text-[11px] text-green-700">Tap to view all photos →</div>
+            </button>
           )}
 
           {isSkipped && (
@@ -379,6 +385,18 @@ export function TaskDetailPage({
         minutesHeld={minutesHeld}
         onClose={() => setReleaseOpen(false)}
         onConfirm={doRelease}
+      />
+      <PhotoGalleryModal
+        open={galleryOpen}
+        title={instance.task_name}
+        subtitle={`${instance.completed_by_name ?? ""} · ${formatTime(instance.completed_at)}`}
+        items={[
+          ...(instance.selfie_url ? [{ url: instance.selfie_url, isSelfie: true }] : []),
+          ...(instance.photo_urls ?? []).map((u) => ({ url: u })),
+        ]}
+        reading={instance.reading_value}
+        vendorDue={null}
+        onClose={() => setGalleryOpen(false)}
       />
     </main>
   );
