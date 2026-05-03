@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getAdminSession } from "@/lib/admin-session";
+import { writeAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -62,6 +63,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
 
   try {
+    // Capture before-state for audit diff
+    const { rows: priorRows } = await sql`SELECT task_id, task_name, system, cadence, active FROM task_templates WHERE id = ${numericId}`;
+    const before = priorRows[0] ?? {};
     await sql`
       UPDATE task_templates SET
         task_id = ${nullIfEmpty(body.task_id)},
@@ -84,6 +88,14 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         active = ${body.active ?? true}
       WHERE id = ${numericId}
     `;
+    const after = { task_id: body.task_id, task_name: body.task_name, system: body.system, cadence: body.cadence, active: body.active };
+    await writeAudit({
+      table: "task_templates",
+      recordId: numericId,
+      action: "update",
+      byName: "admin",
+      diff: { before, after },
+    });
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
@@ -100,7 +112,15 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
   try {
+    const { rows: priorRows } = await sql`SELECT task_id, task_name FROM task_templates WHERE id = ${numericId}`;
     await sql`UPDATE task_templates SET active = FALSE WHERE id = ${numericId}`;
+    await writeAudit({
+      table: "task_templates",
+      recordId: numericId,
+      action: "soft_delete",
+      byName: "admin",
+      diff: { ...(priorRows[0] ?? {}) },
+    });
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

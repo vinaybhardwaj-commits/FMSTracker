@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { setAdminCookie } from "@/lib/admin-session";
 import { isLocked, recordFailure, clearFailures } from "@/lib/rate-limit";
+import { writeAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -49,7 +50,13 @@ export async function POST(req: NextRequest) {
   const match = await compare(pin, hash);
   if (!match) {
     const { remaining } = recordFailure(ip);
-    // TODO Phase 4: write audit_log entry { action: 'pin_failure' }
+    await writeAudit({
+      table: "admin_pin",
+      recordId: `ip:${ip}`,
+      action: "pin_failure",
+      byName: "system",
+      diff: { ip, remaining },
+    });
     return NextResponse.json({ ok: false, error: "wrong_pin", remaining }, { status: 401 });
   }
 

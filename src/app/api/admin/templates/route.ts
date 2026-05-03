@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getAdminSession } from "@/lib/admin-session";
+import { writeAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -90,6 +91,13 @@ export async function POST(req: NextRequest) {
       )
       RETURNING id, task_id
     `;
+    await writeAudit({
+      table: "task_templates",
+      recordId: rows[0].id,
+      action: "create",
+      byName: "admin",
+      diff: { task_id: rows[0].task_id, task_name: body.task_name, system: body.system },
+    });
     return NextResponse.json({ ok: true, id: rows[0].id, task_id: rows[0].task_id });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

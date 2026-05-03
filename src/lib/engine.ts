@@ -209,7 +209,7 @@ export async function generateForToday(): Promise<{
 }
 
 /** Cleanup: free claims whose 30-min window has expired. */
-export async function expireClaims(): Promise<{ expired: number }> {
+export async function expireClaims(): Promise<{ expired: number; ids: number[] }> {
   const r = await sql`
     UPDATE task_instances
     SET status = 'pending',
@@ -219,5 +219,6 @@ export async function expireClaims(): Promise<{ expired: number }> {
     WHERE status = 'claimed' AND claim_expires_at < NOW()
     RETURNING id
   `;
-  return { expired: r.rowCount ?? 0 };
+  const ids = r.rows.map((row) => row.id as number);
+  return { expired: r.rowCount ?? 0, ids };
 }
