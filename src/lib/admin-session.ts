@@ -23,8 +23,10 @@ function getSecret(): string {
   return s;
 }
 
-function utf8(s: string): Uint8Array {
-  return new TextEncoder().encode(s);
+function utf8(s: string): ArrayBuffer {
+  // Slice into a fresh ArrayBuffer (not SharedArrayBuffer) for strict Web Crypto types
+  const u8 = new TextEncoder().encode(s);
+  return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
 }
 
 function bytesToB64Url(bytes: ArrayBuffer | Uint8Array): string {
@@ -34,19 +36,19 @@ function bytesToB64Url(bytes: ArrayBuffer | Uint8Array): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function b64UrlToBytes(s: string): Uint8Array {
+function b64UrlToBytes(s: string): ArrayBuffer {
   const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
   const b64 = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
+  return out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
 }
 
 async function importKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     "raw",
-    utf8(secret),
+    utf8(secret) as ArrayBuffer,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"]
@@ -60,9 +62,9 @@ async function signPayload(payloadB64: string): Promise<string> {
 }
 
 async function verifyPayload(payloadB64: string, sig: string): Promise<boolean> {
-  let sigBytes: Uint8Array;
+  let sigBuf: ArrayBuffer;
   try {
-    sigBytes = b64UrlToBytes(sig);
+    sigBuf = b64UrlToBytes(sig);
   } catch {
     return false;
   }
@@ -72,12 +74,7 @@ async function verifyPayload(payloadB64: string, sig: string): Promise<boolean> 
   } catch {
     return false;
   }
-  return crypto.subtle.verify(
-    "HMAC",
-    key,
-    sigBytes as unknown as ArrayBuffer,
-    utf8(payloadB64) as unknown as ArrayBuffer
-  );
+  return crypto.subtle.verify("HMAC", key, sigBuf, utf8(payloadB64));
 }
 
 export interface AdminSession {

@@ -20,6 +20,7 @@ interface SP {
   actor_type?: string;
   draft_status?: string;
   active?: string;
+  [key: string]: string | undefined;
 }
 
 async function loadTasks(sp: SP): Promise<{
