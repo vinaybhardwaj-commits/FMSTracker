@@ -21,6 +21,7 @@ export interface TaskCardData {
   location_or_asset: string | null;
   status: string; // 'pending' | 'claimed' | 'done' | 'skipped' | 'overdue'
   claimed_by_device: string | null;
+  claimed_by_device_uuid: string | null;
   claimed_by_name: string | null;
   claim_expires_at: string | null;
   completed_by_name: string | null;
@@ -52,7 +53,7 @@ export function TaskCard({ task, myDeviceUuid }: Props) {
   const isSkipped = task.status === "skipped";
 
   const minutesLeft = minutesUntil(task.claim_expires_at);
-  const isMine = task.status === "claimed" && task.claimed_by_device === myDeviceUuid;
+  const isMine = task.status === "claimed" && task.claimed_by_device_uuid === myDeviceUuid;
   const isOther = task.status === "claimed" && !isMine;
 
   return (

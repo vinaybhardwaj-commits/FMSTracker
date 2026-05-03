@@ -33,6 +33,7 @@ interface InstanceDetail {
   priority_weight: number;
   status: string;
   claimed_by_device: string | null;
+  claimed_by_device_uuid: string | null;
   claimed_by_name: string | null;
   claim_expires_at: string | null;
   completed_by_name: string | null;
@@ -190,7 +191,7 @@ export function TaskDetailPage({
   }
 
   const meta = systemMeta(instance.system);
-  const isMine = instance.status === "claimed" && instance.claimed_by_device === device.device_uuid;
+  const isMine = instance.status === "claimed" && instance.claimed_by_device_uuid === device.device_uuid;
   const isOther = instance.status === "claimed" && !isMine;
   const isFree = instance.status === "pending" || instance.status === "overdue";
   const isDone = instance.status === "done";

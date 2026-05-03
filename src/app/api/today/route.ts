@@ -45,6 +45,7 @@ export async function GET() {
       i.acceptance_criteria, i.evidence_required, i.priority_weight,
       i.status, t.cadence,
       i.claimed_by_device::text AS claimed_by_device,
+      d.device_uuid AS claimed_by_device_uuid,
       d.name AS claimed_by_name,
       i.claim_expires_at::text AS claim_expires_at,
       i.completed_by_name, i.completed_at::text AS completed_at

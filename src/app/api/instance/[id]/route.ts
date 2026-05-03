@@ -23,6 +23,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       i.status, t.cadence, t.subsystem,
       t.reference_policy, t.nabh_standard_ref,
       i.claimed_by_device::text AS claimed_by_device,
+      d.device_uuid AS claimed_by_device_uuid,
       d.name AS claimed_by_name,
       d.baseline_selfie_url AS claimed_by_avatar,
       i.claim_expires_at::text AS claim_expires_at,
