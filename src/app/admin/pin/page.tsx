@@ -4,6 +4,16 @@
  * 4-digit keypad. Auto-submit on the 4th digit. On success → redirect to
  * ?next=<path> (or /admin if missing). Wrong PIN → shake animation,
  * remaining-attempts counter. 429 lockout → friendly hard-stop message.
+ *
+ * Hotfix (3 May 2026): navigatedRef latch prevents the success-path useEffect
+ * from re-firing submit() in an infinite loop. Without it: digits stay "0000"
+ * after success (only failure paths cleared digits), the finally block reset
+ * `submitting` to false, and the auto-submit useEffect re-evaluated
+ * `digits.length === 4 && !submitting` as true → re-fired the POST. Each
+ * iteration also queued a router.replace("/admin"), barraging the RSC
+ * endpoint with parallel fetches and producing intermittent 503s under DB
+ * connection pressure. iPhone Safari sat in the loop indefinitely; desktop
+ * Chrome eventually broke out when one navigation won the race.
  */
 
 "use client";
@@ -38,10 +48,14 @@ function PinEntryInner() {
   const [locked, setLocked] = useState<{ retryAfterMs: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  // Latches true after a successful PIN. Permanently disables the keypad and
+  // short-circuits the auto-submit useEffect so we don't re-fire while
+  // router.replace is still navigating.
+  const navigatedRef = useRef(false);
 
   const submit = useCallback(
     async (pin: string) => {
-      if (submittingRef.current) return;
+      if (submittingRef.current || navigatedRef.current) return;
       submittingRef.current = true;
       setSubmitting(true);
       setError(null);
@@ -53,6 +67,7 @@ function PinEntryInner() {
         });
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.ok) {
+          navigatedRef.current = true;
           router.replace(next);
           return;
         }
@@ -69,8 +84,12 @@ function PinEntryInner() {
         setError("Network error — try again");
         setDigits("");
       } finally {
-        submittingRef.current = false;
-        setSubmitting(false);
+        // On success we leave submittingRef latched so the keypad stays disabled
+        // until the navigation completes and the component unmounts.
+        if (!navigatedRef.current) {
+          submittingRef.current = false;
+          setSubmitting(false);
+        }
       }
     },
     [next, router]
@@ -78,6 +97,7 @@ function PinEntryInner() {
 
   // Auto-submit on 4th digit
   useEffect(() => {
+    if (navigatedRef.current) return;
     if (digits.length === 4 && !submitting) {
       void submit(digits);
     }
@@ -86,7 +106,7 @@ function PinEntryInner() {
   // Hardware keyboard support
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (locked) return;
+      if (locked || navigatedRef.current) return;
       if (/^[0-9]$/.test(e.key)) {
         setDigits((d) => (d.length < 4 ? d + e.key : d));
       } else if (e.key === "Backspace") {
@@ -98,7 +118,7 @@ function PinEntryInner() {
   }, [locked]);
 
   function press(k: string) {
-    if (locked || submitting) return;
+    if (locked || submitting || navigatedRef.current) return;
     if (k === "←") {
       setDigits((d) => d.slice(0, -1));
     } else if (k && digits.length < 4) {
