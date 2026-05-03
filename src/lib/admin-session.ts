@@ -1,34 +1,83 @@
 /**
  * src/lib/admin-session.ts
  *
- * Single shared admin-PIN session: HMAC-signed cookie holding (issued_at, exp).
- * No DB, no JWT lib — `crypto` only. 30 min TTL, sliding renewal disabled
- * (re-PIN every 30 min, per PRD §S09).
+ * Edge-safe HMAC-signed admin session cookie. Uses Web Crypto API (crypto.subtle)
+ * — works in both edge middleware and Node API routes.
+ *
+ * Cookie format: `<base64url(payload)>.<base64url(hmac(payload))>`
+ * Payload: { iat, exp } in ms. TTL 30 min, no sliding renewal.
  */
 
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
 export const ADMIN_COOKIE = "fms_admin_session";
-const TTL_MS = 30 * 60 * 1000; // 30 min
+const TTL_MS = 30 * 60 * 1000;
 
 function getSecret(): string {
   const s = process.env.FMS_SESSION_SECRET;
   if (!s || s.length < 32) {
     throw new Error(
-      "FMS_SESSION_SECRET is not set or too short (need >=32 chars). Set in Vercel + .env.local."
+      "FMS_SESSION_SECRET is not set or too short (need >=32 chars)."
     );
   }
   return s;
 }
 
-function sign(payload: string): string {
-  return createHmac("sha256", getSecret()).update(payload).digest("hex");
+function utf8(s: string): Uint8Array {
+  return new TextEncoder().encode(s);
 }
 
-function safeEq(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+function bytesToB64Url(bytes: ArrayBuffer | Uint8Array): string {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let binary = "";
+  for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function b64UrlToBytes(s: string): Uint8Array {
+  const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+  const b64 = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function importKey(secret: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    utf8(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"]
+  );
+}
+
+async function signPayload(payloadB64: string): Promise<string> {
+  const key = await importKey(getSecret());
+  const sig = await crypto.subtle.sign("HMAC", key, utf8(payloadB64));
+  return bytesToB64Url(sig);
+}
+
+async function verifyPayload(payloadB64: string, sig: string): Promise<boolean> {
+  let sigBytes: Uint8Array;
+  try {
+    sigBytes = b64UrlToBytes(sig);
+  } catch {
+    return false;
+  }
+  let key: CryptoKey;
+  try {
+    key = await importKey(getSecret());
+  } catch {
+    return false;
+  }
+  return crypto.subtle.verify(
+    "HMAC",
+    key,
+    sigBytes as unknown as ArrayBuffer,
+    utf8(payloadB64) as unknown as ArrayBuffer
+  );
 }
 
 export interface AdminSession {
@@ -36,32 +85,26 @@ export interface AdminSession {
   exp: number;
 }
 
-/** Build the cookie value: `<base64(payload)>.<hex(hmac(payload))>`. */
-export function mintAdminCookieValue(): { value: string; expires: Date } {
+export async function mintAdminCookieValue(): Promise<{ value: string; expires: Date }> {
   const now = Date.now();
   const payload: AdminSession = { iat: now, exp: now + TTL_MS };
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const sig = sign(payloadB64);
+  const payloadB64 = bytesToB64Url(utf8(JSON.stringify(payload)));
+  const sig = await signPayload(payloadB64);
   return { value: `${payloadB64}.${sig}`, expires: new Date(payload.exp) };
 }
 
-/** Verify cookie value, return session if valid + unexpired, else null. */
-export function verifyAdminCookieValue(raw: string | undefined): AdminSession | null {
+export async function verifyAdminCookieValue(raw: string | undefined): Promise<AdminSession | null> {
   if (!raw) return null;
   const dot = raw.lastIndexOf(".");
   if (dot < 0) return null;
   const payloadB64 = raw.slice(0, dot);
   const sig = raw.slice(dot + 1);
-  let expectedSig: string;
-  try {
-    expectedSig = sign(payloadB64);
-  } catch {
-    return null; // missing secret
-  }
-  if (!safeEq(sig, expectedSig)) return null;
+  const ok = await verifyPayload(payloadB64, sig);
+  if (!ok) return null;
   let parsed: AdminSession;
   try {
-    parsed = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+    const json = new TextDecoder().decode(b64UrlToBytes(payloadB64));
+    parsed = JSON.parse(json);
   } catch {
     return null;
   }
@@ -69,15 +112,13 @@ export function verifyAdminCookieValue(raw: string | undefined): AdminSession | 
   return parsed;
 }
 
-/** Read+verify the session from request cookies (server components / route handlers). */
 export async function getAdminSession(): Promise<AdminSession | null> {
   const c = await cookies();
   return verifyAdminCookieValue(c.get(ADMIN_COOKIE)?.value);
 }
 
-/** Set the session cookie. */
 export async function setAdminCookie(): Promise<void> {
-  const { value, expires } = mintAdminCookieValue();
+  const { value, expires } = await mintAdminCookieValue();
   const c = await cookies();
   c.set(ADMIN_COOKIE, value, {
     httpOnly: true,
@@ -88,7 +129,6 @@ export async function setAdminCookie(): Promise<void> {
   });
 }
 
-/** Clear the session cookie (logout / "Lock"). */
 export async function clearAdminCookie(): Promise<void> {
   const c = await cookies();
   c.delete(ADMIN_COOKIE);

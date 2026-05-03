@@ -1,12 +1,9 @@
 /**
  * src/middleware.ts
  *
- * Edge middleware that gates /admin/* (except /admin/pin) by checking
- * the fms_admin_session cookie. We CANNOT use bcryptjs at the edge, so
- * the middleware just verifies the HMAC-signed session cookie. The actual
- * PIN check + bcrypt compare lives in /api/admin/pin-verify (Node runtime).
- *
- * Unauthenticated requests redirect to /admin/pin?next=<original-path>.
+ * Edge middleware that gates /admin/* (except /admin/pin) by verifying the
+ * fms_admin_session HMAC-signed cookie via Web Crypto API.
+ * The PIN check + bcrypt compare lives in /api/admin/pin-verify (Node runtime).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,16 +13,15 @@ export const config = {
   matcher: ["/admin/:path*"],
 };
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // /admin/pin and /api/admin/pin-* are always reachable without a session
   if (pathname === "/admin/pin" || pathname.startsWith("/admin/pin/")) {
     return NextResponse.next();
   }
 
   const raw = req.cookies.get(ADMIN_COOKIE)?.value;
-  const session = verifyAdminCookieValue(raw);
+  const session = await verifyAdminCookieValue(raw);
   if (session) return NextResponse.next();
 
   const url = req.nextUrl.clone();
