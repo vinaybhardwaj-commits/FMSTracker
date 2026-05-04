@@ -1,7 +1,10 @@
 /**
  * src/components/WorkerShell.tsx — sticky top bar used on every worker screen.
  *
- * Layout: avatar + name | 32px progress rings | nav icons (yesterday / dashboard / admin)
+ * Layout: avatar + name | 32px progress rings | nav icons (yesterday / dashboard)
+ *
+ * The admin link is intentionally NOT rendered — only V + Charan know the
+ * `/admin` URL and reach it by typing it directly.
  */
 
 "use client";
@@ -34,9 +37,6 @@ export function WorkerShell({ name, avatarUrl, rings }: Props) {
         </Link>
         <Link href={"/dashboard" as any} aria-label="Dashboard" className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-slate-100" title="Dashboard">
           <span className="text-lg">📊</span>
-        </Link>
-        <Link href={"/admin" as any} aria-label="Admin" className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-slate-100" title="Admin">
-          <span className="text-lg">🔒</span>
         </Link>
       </nav>
     </header>

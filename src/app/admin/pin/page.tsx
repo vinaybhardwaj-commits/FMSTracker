@@ -132,7 +132,7 @@ function PinEntryInner() {
       <main className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-6 px-6 py-16 text-center">
         <div className="text-2xl font-semibold text-red-700">Too many wrong PINs</div>
         <p className="text-base text-slate-700">
-          Locked for the next {mins} {mins === 1 ? "minute" : "minutes"}. Find Charan or V.
+          Locked for the next {mins} {mins === 1 ? "minute" : "minutes"}.
         </p>
       </main>
     );
@@ -142,7 +142,6 @@ function PinEntryInner() {
     <main className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center gap-8 px-6 py-12">
       <div className="text-center">
         <div className="text-2xl font-bold text-ehrc-navy">Admin access</div>
-        <div className="mt-1 text-sm text-slate-500">Charan + V only</div>
       </div>
 
       <div

@@ -57,7 +57,7 @@ export default async function AdminHomePage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <div className="text-2xl font-bold text-ehrc-navy">Admin</div>
-          <div className="text-sm text-slate-500">FMSTracker · Charan + V</div>
+          <div className="text-sm text-slate-500">FMSTracker</div>
         </div>
         <form action="/api/admin/pin-logout" method="post">
           <button
