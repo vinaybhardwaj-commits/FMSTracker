@@ -6,6 +6,11 @@
  * - Auto-pauses when document.hidden, resumes on visible.
  * - Exponential backoff on errors (1s → 2s → 4s → 30s cap; resets on success).
  * - Caller controls interval; default 60s.
+ *
+ * IMPORTANT: We stabilize the fetcher via a ref so callers can pass an inline
+ * arrow `() => fetch(...).then(r => r.json())` without causing the polling
+ * effect to thrash on every render. The effect runs once per intervalMs change
+ * (which is typically constant), not once per fetcher identity.
  */
 
 "use client";
@@ -29,9 +34,14 @@ export function useAdminPoll<T>(
   const [lastFetched, setLastFetched] = useState<number | null>(null);
   const [isFetching, setIsFetching] = useState(false);
 
+  // Ref-stabilize fetcher so re-renders don't re-fire the polling effect.
+  const fetcherRef = useRef(fetcher);
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  }, [fetcher]);
+
   const backoffRef = useRef(intervalMs);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
 
   const tick = useCallback(async () => {
@@ -39,11 +49,9 @@ export function useAdminPoll<T>(
       // pause loop, will be resumed on visibilitychange
       return;
     }
-    setIsFetching(true);
-    abortRef.current?.abort();
-    abortRef.current = new AbortController();
+    if (mountedRef.current) setIsFetching(true);
     try {
-      const result = await fetcher();
+      const result = await fetcherRef.current();
       if (!mountedRef.current) return;
       setData(result);
       setError(null);
@@ -60,14 +68,13 @@ export function useAdminPoll<T>(
         timerRef.current = setTimeout(tick, backoffRef.current);
       }
     }
-  }, [fetcher, intervalMs]);
+  }, [intervalMs]);
 
   useEffect(() => {
     mountedRef.current = true;
     tick();
     const onVis = () => {
       if (!document.hidden) {
-        // resume immediately
         if (timerRef.current) clearTimeout(timerRef.current);
         tick();
       }
@@ -77,7 +84,6 @@ export function useAdminPoll<T>(
       mountedRef.current = false;
       document.removeEventListener("visibilitychange", onVis);
       if (timerRef.current) clearTimeout(timerRef.current);
-      abortRef.current?.abort();
     };
   }, [tick]);
 
