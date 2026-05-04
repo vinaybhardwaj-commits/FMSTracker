@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const { rows } = await sql`
-      SELECT id, licence_id, item, authority, current_expiry,
+      SELECT id, licence_id, item, authority, to_char(current_expiry, 'YYYY-MM-DD') AS current_expiry,
         (current_expiry - CURRENT_DATE)::int AS days_until
       FROM statutory_items
       WHERE active = TRUE

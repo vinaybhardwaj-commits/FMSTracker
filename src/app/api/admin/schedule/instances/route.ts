@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       ti.task_name,
       ti.system,
       ti.location_or_asset,
-      ti.due_date,
+      to_char(ti.due_date, 'YYYY-MM-DD') AS due_date,
       ti.status,
       ti.priority_weight,
       tt.cadence,
