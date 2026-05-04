@@ -60,9 +60,9 @@ const NAV: NavGroup[] = [
   {
     label: "Inventory",
     items: [
-      { label: "Locations", href: "/admin/locations", Icon: IconLocations, shipsInSprint: "AD1.4" },
-      { label: "Vendors", href: "/admin/vendors", Icon: IconVendors, shipsInSprint: "AD1.4" },
-      { label: "Statutory", href: "/admin/statutory", Icon: IconStatutory, shipsInSprint: "AD1.4" },
+      { label: "Locations", href: "/admin/locations", Icon: IconLocations },
+      { label: "Vendors", href: "/admin/vendors", Icon: IconVendors },
+      { label: "Statutory", href: "/admin/statutory", Icon: IconStatutory },
     ],
   },
   {
