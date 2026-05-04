@@ -54,7 +54,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: "Tasks", href: "/admin/tasks", Icon: IconTasks },
       { label: "Schedule", href: "/admin/schedule", Icon: IconSchedule },
-      { label: "Crew", href: "/admin/crew", Icon: IconCrew, shipsInSprint: "AD1.5" },
+      { label: "Crew", href: "/admin/crew", Icon: IconCrew },
     ],
   },
   {
