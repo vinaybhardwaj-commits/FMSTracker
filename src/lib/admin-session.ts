@@ -5,13 +5,15 @@
  * — works in both edge middleware and Node API routes.
  *
  * Cookie format: `<base64url(payload)>.<base64url(hmac(payload))>`
- * Payload: { iat, exp } in ms. TTL 30 min, no sliding renewal.
+ * Payload: { iat, exp, extension_count? } in ms. TTL 30 min, no sliding renewal
+ * by default; pin-extend (AD1.0+) can re-mint with extension_count++.
  */
 
 import { cookies } from "next/headers";
 
 export const ADMIN_COOKIE = "fms_admin_session";
-const TTL_MS = 30 * 60 * 1000;
+export const TTL_MS = 30 * 60 * 1000;
+export const MAX_EXTENSIONS = 4; // ceiling of 4 extensions = 2h cumulative beyond initial
 
 function getSecret(): string {
   const s = process.env.FMS_SESSION_SECRET;
@@ -24,7 +26,6 @@ function getSecret(): string {
 }
 
 function utf8(s: string): ArrayBuffer {
-  // Slice into a fresh ArrayBuffer (not SharedArrayBuffer) for strict Web Crypto types
   const u8 = new TextEncoder().encode(s);
   return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength) as ArrayBuffer;
 }
@@ -80,6 +81,8 @@ async function verifyPayload(payloadB64: string, sig: string): Promise<boolean> 
 export interface AdminSession {
   iat: number;
   exp: number;
+  /** AD1.0+: incremented on each /api/admin/pin-extend call. Capped at MAX_EXTENSIONS. */
+  extension_count?: number;
 }
 
 export async function mintAdminCookieValue(): Promise<{ value: string; expires: Date }> {
@@ -88,6 +91,29 @@ export async function mintAdminCookieValue(): Promise<{ value: string; expires: 
   const payloadB64 = bytesToB64Url(utf8(JSON.stringify(payload)));
   const sig = await signPayload(payloadB64);
   return { value: `${payloadB64}.${sig}`, expires: new Date(payload.exp) };
+}
+
+/**
+ * AD1.0+: Re-mint a cookie based on a still-valid current session, incrementing
+ * extension_count. Used by /api/admin/pin-extend.
+ */
+export async function mintAdminCookieValueExtend(
+  current: AdminSession
+): Promise<{ value: string; expires: Date; newExtensionCount: number }> {
+  const now = Date.now();
+  const newCount = (current.extension_count ?? 0) + 1;
+  const payload: AdminSession = {
+    iat: now,
+    exp: now + TTL_MS,
+    extension_count: newCount,
+  };
+  const payloadB64 = bytesToB64Url(utf8(JSON.stringify(payload)));
+  const sig = await signPayload(payloadB64);
+  return {
+    value: `${payloadB64}.${sig}`,
+    expires: new Date(payload.exp),
+    newExtensionCount: newCount,
+  };
 }
 
 export async function verifyAdminCookieValue(raw: string | undefined): Promise<AdminSession | null> {
@@ -109,6 +135,11 @@ export async function verifyAdminCookieValue(raw: string | undefined): Promise<A
   return parsed;
 }
 
+/**
+ * Backwards-compat: returns the raw AdminSession payload. Used by all v1 admin
+ * API routes. v2 routes should import getAdminSession from `@/lib/admin-auth`
+ * instead, which returns a richer role-aware object.
+ */
 export async function getAdminSession(): Promise<AdminSession | null> {
   const c = await cookies();
   return verifyAdminCookieValue(c.get(ADMIN_COOKIE)?.value);
@@ -124,6 +155,25 @@ export async function setAdminCookie(): Promise<void> {
     path: "/",
     expires,
   });
+}
+
+/**
+ * AD1.0+: Set a cookie that re-uses an existing valid session's lineage. Returns
+ * the new extension_count so callers can audit-log it.
+ */
+export async function setAdminCookieExtended(
+  current: AdminSession
+): Promise<{ extensionCount: number; newExp: number }> {
+  const { value, expires, newExtensionCount } = await mintAdminCookieValueExtend(current);
+  const c = await cookies();
+  c.set(ADMIN_COOKIE, value, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires,
+  });
+  return { extensionCount: newExtensionCount, newExp: expires.getTime() };
 }
 
 export async function clearAdminCookie(): Promise<void> {
