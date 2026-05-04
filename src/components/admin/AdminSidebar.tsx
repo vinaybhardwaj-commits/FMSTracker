@@ -68,7 +68,7 @@ const NAV: NavGroup[] = [
   {
     label: "Oversight",
     items: [
-      { label: "Reports", href: "/admin/reports", Icon: IconReports, shipsInSprint: "AD1.6" },
+      { label: "Reports", href: "/admin/reports", Icon: IconReports },
       { label: "Audit", href: "/admin/audit", Icon: IconAudit, shipsInSprint: "AD1.7" },
       { label: "Settings", href: "/admin/settings", Icon: IconSettings, shipsInSprint: "AD1.7" },
     ],
