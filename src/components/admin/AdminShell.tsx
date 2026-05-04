@@ -1,13 +1,11 @@
 /**
- * src/components/admin/AdminShell.tsx — AD1.0
+ * src/components/admin/AdminShell.tsx — AD1.0 + AD1.1
  *
- * Composes the v2 admin chrome: phone hard-block + top header + sidebar +
- * content area + session-expiry warning toast. Wraps every page inside the
- * (v2) route group.
+ * Composes the v2 admin chrome: phone hard-block + DashboardRefreshProvider
+ * + top header + sidebar + content area + session-expiry warning toast.
  *
- * Lifecycle:
- *  - On mount: purge expired form drafts (24h+) from localStorage.
- *  - Renders <PhoneHardBlock> first; if active, returns early (no chrome).
+ * AD1.1 added DashboardRefreshProvider — the bus that lets the top header
+ * and dashboard widgets coordinate refreshes + freshness display.
  */
 
 "use client";
@@ -17,6 +15,7 @@ import { PhoneHardBlock } from "./PhoneHardBlock";
 import { AdminTopHeader } from "./AdminTopHeader";
 import { AdminSidebar } from "./AdminSidebar";
 import { SessionExpiryWarning } from "./SessionExpiryWarning";
+import { DashboardRefreshProvider } from "./dashboard/refresh-context";
 import { purgeExpiredFormDrafts } from "@/lib/use-form-draft";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -26,16 +25,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <PhoneHardBlock>
-      <div className="min-h-screen bg-slate-50">
-        <AdminTopHeader />
-        <div className="flex">
-          <AdminSidebar />
-          <main className="min-w-0 flex-1 px-6 py-6">
-            <div className="mx-auto max-w-screen-2xl">{children}</div>
-          </main>
+      <DashboardRefreshProvider>
+        <div className="min-h-screen bg-slate-50">
+          <AdminTopHeader />
+          <div className="flex">
+            <AdminSidebar />
+            <main className="min-w-0 flex-1 px-6 py-6">
+              <div className="mx-auto max-w-screen-2xl">{children}</div>
+            </main>
+          </div>
+          <SessionExpiryWarning />
         </div>
-        <SessionExpiryWarning />
-      </div>
+      </DashboardRefreshProvider>
     </PhoneHardBlock>
   );
 }

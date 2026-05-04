@@ -1,0 +1,20 @@
+/**
+ * GET /api/admin/dashboard/yesterday-completion — AD1.1
+ */
+import { NextResponse } from "next/server";
+import { getAdminSession } from "@/lib/admin-auth";
+import { queryYesterdayCompletion } from "@/lib/dashboard-queries";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const session = await getAdminSession();
+  if (!session) return NextResponse.json({ ok: false, error: "no_session" }, { status: 401 });
+  try {
+    const data = await queryYesterdayCompletion();
+    return NextResponse.json({ ok: true, generated_at: new Date().toISOString(), ...data });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: (e as Error).message }, { status: 500 });
+  }
+}

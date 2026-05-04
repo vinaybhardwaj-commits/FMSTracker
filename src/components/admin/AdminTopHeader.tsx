@@ -1,12 +1,9 @@
 /**
- * src/components/admin/AdminTopHeader.tsx — AD1.0
+ * src/components/admin/AdminTopHeader.tsx — AD1.0 + AD1.1
  *
- * Sticky top header for admin v2: brand mark, breadcrumbs, refresh, lock.
- *
- * AD1.0 placeholders:
- * - Refresh button: visible but no-op (wires up to widget pollers in AD1.1)
- * - Search input: not yet shown (deferred to AD1.7)
- * - "Updated Ns ago" chip: not yet shown (depends on widget polling state in AD1.1)
+ * Sticky top header for admin v2: brand mark, breadcrumbs, "Updated Ns ago"
+ * chip (AD1.1), refresh button (now actually wires up to widget pollers via
+ * the dashboard refresh bus), and Lock button.
  */
 
 "use client";
@@ -15,10 +12,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { IconRefresh, IconLock } from "./icons";
+import { useDashboardRefresh } from "./dashboard/refresh-context";
+import { UpdatedAgoChip } from "./dashboard/UpdatedAgoChip";
 
 function buildCrumbs(pathname: string | null) {
   if (!pathname) return [{ label: "Admin", href: "/admin/dashboard" as const }];
-  const parts = pathname.split("/").filter(Boolean); // ['admin','dashboard',...]
+  const parts = pathname.split("/").filter(Boolean);
   const crumbs: { label: string; href: string }[] = [
     { label: "Admin", href: "/admin/dashboard" },
   ];
@@ -34,6 +33,7 @@ function buildCrumbs(pathname: string | null) {
 export function AdminTopHeader() {
   const pathname = usePathname();
   const crumbs = useMemo(() => buildCrumbs(pathname), [pathname]);
+  const { triggerRefreshAll, earliestFetched } = useDashboardRefresh();
 
   async function handleLock() {
     try {
@@ -42,6 +42,15 @@ export function AdminTopHeader() {
       // ignore — redirect anyway
     }
     if (typeof window !== "undefined") window.location.replace("/");
+  }
+
+  function handleRefresh() {
+    if (earliestFetched != null) {
+      triggerRefreshAll();
+    } else {
+      // No widgets registered (e.g., not on dashboard) — fall back to page reload
+      window.location.reload();
+    }
   }
 
   return (
@@ -63,12 +72,13 @@ export function AdminTopHeader() {
           </span>
         ))}
       </nav>
+      <UpdatedAgoChip />
       <div className="flex items-center gap-1">
         <button
           type="button"
-          onClick={() => window.location.reload()}
+          onClick={handleRefresh}
           aria-label="Refresh"
-          title="Refresh"
+          title="Refresh all widgets"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
         >
           <IconRefresh className="h-4 w-4" />
