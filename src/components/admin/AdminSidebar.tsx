@@ -53,7 +53,7 @@ const NAV: NavGroup[] = [
     label: "Operations",
     items: [
       { label: "Tasks", href: "/admin/tasks", Icon: IconTasks },
-      { label: "Schedule", href: "/admin/schedule", Icon: IconSchedule, shipsInSprint: "AD1.3" },
+      { label: "Schedule", href: "/admin/schedule", Icon: IconSchedule },
       { label: "Crew", href: "/admin/crew", Icon: IconCrew, shipsInSprint: "AD1.5" },
     ],
   },
