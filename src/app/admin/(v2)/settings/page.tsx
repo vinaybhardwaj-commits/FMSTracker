@@ -75,7 +75,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   );
 }
 
-function AccessTab({ pinFails, extensions }: { pinFails: any[]; extensions: any[] }) {
+interface AuditLite { at: string; diff: Record<string, unknown> | null; }
+function AccessTab({ pinFails, extensions }: { pinFails: AuditLite[]; extensions: AuditLite[] }) {
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -156,7 +157,7 @@ function PlaceholderTab({ title, sprint, desc }: { title: string; sprint: string
   );
 }
 
-function AboutTab({ session }: { session: any }) {
+function AboutTab({ session }: { session: { role: string; sessionId: string; expiresAt: number; extensionCount: number } }) {
   const sha = process.env.VERCEL_GIT_COMMIT_SHA ?? "unknown";
   const ref = process.env.VERCEL_GIT_COMMIT_REF ?? "main";
   const env = process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "unknown";
