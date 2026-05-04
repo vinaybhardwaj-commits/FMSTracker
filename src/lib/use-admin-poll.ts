@@ -50,8 +50,9 @@ export function useAdminPoll<T>(
       if (!alive) return;
       if (typeof document !== "undefined" && document.hidden) return;
       setIsFetching(true);
+      console.log(`[useAdminPoll #${id}] before await`, typeof fetcherRef.current);
       try {
-        const result = await fetcherRef.current();
+        const promise = fetcherRef.current(); console.log(`[useAdminPoll #${id}] called fetcher, got:`, promise); const result = await promise;
         // eslint-disable-next-line no-console
         console.log(`[useAdminPoll #${id}] success`, result);
         if (!alive) return;
