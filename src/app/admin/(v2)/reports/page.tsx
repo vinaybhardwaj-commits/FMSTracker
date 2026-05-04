@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminSession } from "@/lib/admin-auth";
 import { REPORT_TYPES } from "@/lib/reports";
+import { ImportsClient } from "@/components/admin/reports/ImportsClient";
 
 export const dynamic = "force-dynamic";
 
@@ -59,12 +60,7 @@ export default async function ReportsHubPage({ searchParams }: { searchParams: P
         </div>
       )}
 
-      {active === "imports" && (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
-          <div className="text-base font-medium text-ehrc-navy">CSV imports ship in Phase 5</div>
-          <div className="mt-1 text-sm text-slate-500">Bulk import for tasks, locations, vendors. Lands in v1.x.</div>
-        </div>
-      )}
+      {active === "imports" && <ImportsClient />}
 
       {active === "history" && <HistoryTab />}
     </div>
