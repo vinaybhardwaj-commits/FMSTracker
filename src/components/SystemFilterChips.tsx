@@ -17,7 +17,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+// useEffect not currently used; readPersistedFilter is called from TodayPage
 import { systemMeta } from "@/lib/system-colors";
 
 const STORAGE_KEY = "fms_worker_system_filter";
