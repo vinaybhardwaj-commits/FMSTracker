@@ -8,9 +8,14 @@
  *    we can't deterministically interpret (e.g., "audit anniversary").
  *  - Idempotent via UNIQUE INDEX (template_id, due_date) — re-running the cron
  *    on the same day is a no-op.
+ *  - Stale daily cleanup (May 2026): rows with status='overdue' AND
+ *    due_date < (today - 1 day) AND cadence='daily' get auto-skipped at the
+ *    start of each cron tick. Yesterday's overdue stays visible to workers
+ *    for one full day before being pruned the next cron.
  *
  * V1.x backlog: real rotation logic for "rotating floors/zones/rooms" anchors;
- * per-template effective_from for annual anchors; per-vendor schedule sync.
+ * per-template effective_from for annual anchors; per-vendor schedule sync;
+ * extending stale cleanup beyond daily cadence (weekly+ keep overdue tail).
  */
 
 import { sql } from "@vercel/postgres";
@@ -131,10 +136,77 @@ interface TemplateRow {
 }
 
 /**
- * Generation: marks carryovers as overdue, then inserts today's new instances.
- * Returns counts. Safe to re-run on the same day (UNIQUE INDEX prevents dups).
+ * Auto-skip stale daily-cadence overdue rows.
+ *
+ * Transitions task_instances where:
+ *   - status = 'overdue'
+ *   - due_date < (today - 1 day)
+ *   - linked template cadence = 'daily'
+ * to status = 'auto_skipped', writing one audit_log entry per row.
+ *
+ * Atomic: UPDATE + audit INSERT happen in a single SQL statement (multi-CTE
+ * with side effects). Either both succeed or both roll back.
+ *
+ * Called from generateForToday() at the start of each cron tick (actor='system'),
+ * and from scripts/backfill-stale-dailies.ts (actor='system-backfill') for the
+ * one-time pile-up cleanup. Actor flows into audit_log.changed_by_name and
+ * drives the Compliance Summary completionPct split (backfill rows excluded
+ * from total denominator; ongoing system rows included).
+ *
+ * Daily cadence only — weekly+ cadences keep their existing overdue tail
+ * (V's design call: longer cadences genuinely deserve a longer tail).
+ *
+ * Yesterday's overdue rows are intentionally untouched — they get one full
+ * day of worker visibility before the next cron prunes them.
+ */
+export async function autoSkipStaleDailies(actor: "system" | "system-backfill" = "system"): Promise<{ skipped: number }> {
+  const r = await sql<{ updated_count: number }>`
+    WITH to_skip AS (
+      SELECT i.id, i.template_id, i.status, i.due_date::text AS due_date, i.system, i.task_name,
+             (CURRENT_DATE - i.due_date)::int AS days_overdue
+      FROM task_instances i
+      JOIN task_templates t ON t.id = i.template_id
+      WHERE i.status = 'overdue'
+        AND i.due_date < (CURRENT_DATE - INTERVAL '1 day')
+        AND t.cadence = 'daily'
+    ),
+    updated AS (
+      UPDATE task_instances
+      SET status = 'auto_skipped'
+      WHERE id IN (SELECT id FROM to_skip)
+      RETURNING id
+    ),
+    audit AS (
+      INSERT INTO audit_log (table_name, record_id, action, changed_by_device, changed_by_name, diff, created_at)
+      SELECT 'task_instances',
+             to_skip.id::text,
+             'task.auto_skip.superseded',
+             NULL,
+             ${actor},
+             jsonb_build_object(
+               'reason', 'Auto-skipped: superseded by next day',
+               'prior_status', to_skip.status,
+               'due_date', to_skip.due_date,
+               'days_overdue', to_skip.days_overdue,
+               'system', to_skip.system,
+               'task_name', to_skip.task_name
+             ),
+             NOW()
+      FROM to_skip
+      RETURNING id
+    )
+    SELECT (SELECT COUNT(*)::int FROM updated) AS updated_count
+  `;
+  return { skipped: r.rows[0]?.updated_count ?? 0 };
+}
+
+/**
+ * Generation: auto-skips stale dailies, marks carryovers as overdue, then
+ * inserts today's new instances. Returns counts. Safe to re-run on the same
+ * day (UNIQUE INDEX prevents dups).
  */
 export async function generateForToday(): Promise<{
+  auto_skipped: number;
   carried_over: number;
   generated: number;
   considered: number;
@@ -142,7 +214,10 @@ export async function generateForToday(): Promise<{
 }> {
   const today = todayInIST();
 
-  // 1. Carryover: mark prior pending/claimed as overdue
+  // 1. Auto-skip stale daily-cadence overdue rows (status='overdue', due_date < today-1)
+  const skip = await autoSkipStaleDailies("system");
+
+  // 2. Carryover: mark prior pending/claimed as overdue
   const carry = await sql`
     UPDATE task_instances
     SET status = 'overdue'
@@ -151,7 +226,7 @@ export async function generateForToday(): Promise<{
     RETURNING id
   `;
 
-  // 2. Pull active templates that the engine handles
+  // 3. Pull active templates that the engine handles
   const tplResult = await sql<TemplateRow>`
     SELECT id, cadence, cadence_anchor, frequency_in_days, task_name, system,
            location_or_asset, acceptance_criteria, evidence_required, priority_weight,
@@ -201,6 +276,7 @@ export async function generateForToday(): Promise<{
   }
 
   return {
+    auto_skipped: skip.skipped,
     carried_over: carry.rowCount ?? 0,
     generated,
     considered: tplResult.rowCount ?? 0,
