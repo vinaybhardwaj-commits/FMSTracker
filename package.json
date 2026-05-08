@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "migrate": "tsx scripts/migrate.ts",
-    "seed": "tsx scripts/seed-from-csv.ts"
+    "seed": "tsx scripts/seed-from-csv.ts",
+    "backfill:stale-dailies": "tsx scripts/backfill-stale-dailies.ts"
   },
   "dependencies": {
     "@vercel/blob": "^0.27.0",
