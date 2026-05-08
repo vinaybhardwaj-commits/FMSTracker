@@ -17,6 +17,7 @@ interface Snapshot {
   done: number;
   skipped: number;
   overdue: number;
+  auto_skipped: number;
 }
 
 const SEGMENTS: { key: keyof Snapshot; label: string; color: string }[] = [
@@ -25,6 +26,7 @@ const SEGMENTS: { key: keyof Snapshot; label: string; color: string }[] = [
   { key: "pending", label: "Pending", color: "bg-slate-300" },
   { key: "overdue", label: "Overdue", color: "bg-red-500" },
   { key: "skipped", label: "Skipped", color: "bg-amber-400" },
+  { key: "auto_skipped", label: "Auto-skipped", color: "bg-slate-400" },
 ];
 
 export function TodaySnapshotCard() {

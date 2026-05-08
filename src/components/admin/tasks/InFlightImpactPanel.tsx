@@ -22,6 +22,7 @@ interface InFlightResp {
     done?: number;
     overdue?: number;
     skipped?: number;
+    auto_skipped?: number;
     propagatable?: number;
     total?: number;
   };
@@ -155,6 +156,7 @@ function statusTone(status: string): string {
     case "done": return "bg-emerald-100 text-emerald-800";
     case "overdue": return "bg-red-100 text-red-800";
     case "skipped": return "bg-amber-100 text-amber-800";
+    case "auto_skipped": return "bg-slate-100 text-slate-500 italic";
     default: return "bg-slate-100 text-slate-700";
   }
 }

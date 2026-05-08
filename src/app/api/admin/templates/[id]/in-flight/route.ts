@@ -30,6 +30,7 @@ export async function GET(
       COUNT(*) FILTER (WHERE status = 'done')::int AS done,
       COUNT(*) FILTER (WHERE status = 'overdue')::int AS overdue,
       COUNT(*) FILTER (WHERE status = 'skipped')::int AS skipped,
+      COUNT(*) FILTER (WHERE status = 'auto_skipped')::int AS auto_skipped,
       COUNT(*) FILTER (WHERE status IN ('pending','claimed','overdue'))::int AS propagatable,
       COUNT(*)::int AS total
     FROM task_instances

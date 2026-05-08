@@ -8,7 +8,7 @@
  * we treat as date-only for due_date comparisons).
  *
  * Schema notes (from migrations/0001_init.sql):
- *  - task_instances.status: 'pending' | 'claimed' | 'done' | 'skipped' | 'overdue'
+ *  - task_instances.status: 'pending' | 'claimed' | 'done' | 'skipped' | 'overdue' | 'auto_skipped'
  *  - task_instances.due_date is DATE; claim_expires_at, claimed_at, completed_at TIMESTAMPTZ
  *  - statutory_items: licence_id, item, current_expiry (DATE), active
  *  - audit_log: table_name, record_id, action, changed_by_name, diff, created_at
@@ -23,6 +23,7 @@ export interface TodaySnapshot {
   done: number;
   skipped: number;
   overdue: number;
+  auto_skipped: number;
 }
 
 export async function queryTodaySnapshot(): Promise<TodaySnapshot> {
@@ -33,7 +34,8 @@ export async function queryTodaySnapshot(): Promise<TodaySnapshot> {
       COUNT(*) FILTER (WHERE status = 'claimed')::int AS claimed,
       COUNT(*) FILTER (WHERE status = 'done')::int AS done,
       COUNT(*) FILTER (WHERE status = 'skipped')::int AS skipped,
-      COUNT(*) FILTER (WHERE status = 'overdue')::int AS overdue
+      COUNT(*) FILTER (WHERE status = 'overdue')::int AS overdue,
+      COUNT(*) FILTER (WHERE status = 'auto_skipped')::int AS auto_skipped
     FROM task_instances
     WHERE due_date = CURRENT_DATE
   `;
@@ -45,6 +47,7 @@ export async function queryTodaySnapshot(): Promise<TodaySnapshot> {
     done: r.done ?? 0,
     skipped: r.skipped ?? 0,
     overdue: r.overdue ?? 0,
+    auto_skipped: r.auto_skipped ?? 0,
   };
 }
 
