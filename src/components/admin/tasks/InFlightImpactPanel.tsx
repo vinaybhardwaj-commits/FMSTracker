@@ -78,6 +78,7 @@ export function InFlightImpactPanel({ templateId, templateSnapshot }: Props) {
               <CountChip label="Claimed" value={counts.claimed ?? 0} tone="blue" />
               <CountChip label="Overdue" value={counts.overdue ?? 0} tone="red" />
               <CountChip label="Done" value={counts.done ?? 0} tone="emerald" />
+              <CountChip label="Auto-skipped" value={counts.auto_skipped ?? 0} tone="slate" />
             </div>
 
             <div className="mb-3 text-xs text-slate-600">
