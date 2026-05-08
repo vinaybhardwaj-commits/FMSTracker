@@ -63,8 +63,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
 
   try {
-    // Capture before-state for audit diff
-    const { rows: priorRows } = await sql`SELECT task_id, task_name, system, cadence, active FROM task_templates WHERE id = ${numericId}`;
+    // Capture full before-state for audit diff (NABH-defensible: every editable field)
+    const { rows: priorRows } = await sql`SELECT * FROM task_templates WHERE id = ${numericId}`;
     const before = priorRows[0] ?? {};
     await sql`
       UPDATE task_templates SET
@@ -88,7 +88,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         active = ${body.active ?? true}
       WHERE id = ${numericId}
     `;
-    const after = { task_id: body.task_id, task_name: body.task_name, system: body.system, cadence: body.cadence, active: body.active };
+    // Capture full after-state from DB (ground truth, post-nullIfEmpty transformations)
+    const { rows: afterRows } = await sql`SELECT * FROM task_templates WHERE id = ${numericId}`;
+    const after = afterRows[0] ?? {};
     await writeAudit({
       table: "task_templates",
       recordId: numericId,
@@ -112,14 +114,15 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
   try {
-    const { rows: priorRows } = await sql`SELECT task_id, task_name FROM task_templates WHERE id = ${numericId}`;
+    // Capture full row before soft-delete (NABH: must be able to reconstruct retired template)
+    const { rows: priorRows } = await sql`SELECT * FROM task_templates WHERE id = ${numericId}`;
     await sql`UPDATE task_templates SET active = FALSE WHERE id = ${numericId}`;
     await writeAudit({
       table: "task_templates",
       recordId: numericId,
       action: "soft_delete",
       byName: "admin",
-      diff: { ...(priorRows[0] ?? {}) },
+      diff: { before: priorRows[0] ?? {} },
     });
     return NextResponse.json({ ok: true });
   } catch (e) {

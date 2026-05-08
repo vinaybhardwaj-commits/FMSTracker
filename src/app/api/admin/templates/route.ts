@@ -89,14 +89,15 @@ export async function POST(req: NextRequest) {
         ${body.priority_weight ?? 50}, ${body.draft_status ?? "proposed"},
         ${nullIfEmpty(body.notes)}, ${body.active ?? true}
       )
-      RETURNING id, task_id
+      RETURNING *
     `;
+    // Capture full created row for audit (ground truth post-nullIfEmpty transformations)
     await writeAudit({
       table: "task_templates",
       recordId: rows[0].id,
       action: "create",
       byName: "admin",
-      diff: { task_id: rows[0].task_id, task_name: body.task_name, system: body.system },
+      diff: { after: rows[0] },
     });
     return NextResponse.json({ ok: true, id: rows[0].id, task_id: rows[0].task_id });
   } catch (e) {
