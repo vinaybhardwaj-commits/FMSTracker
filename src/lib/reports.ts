@@ -272,10 +272,20 @@ export async function loadComplianceSummary(p: ReportParameters): Promise<Report
   const { rows: bySystem } = await sql`
     SELECT
       ti.system,
-      COUNT(*)::int AS total,
+      COUNT(*)::int AS total_raw,
       COUNT(*) FILTER (WHERE ti.status = 'done')::int AS done,
       COUNT(*) FILTER (WHERE ti.status = 'overdue')::int AS overdue,
-      COUNT(*) FILTER (WHERE ti.status = 'skipped')::int AS skipped
+      COUNT(*) FILTER (WHERE ti.status = 'skipped')::int AS skipped,
+      COUNT(*) FILTER (WHERE ti.status = 'auto_skipped')::int AS auto_skipped,
+      COUNT(*) FILTER (
+        WHERE ti.status = 'auto_skipped'
+          AND EXISTS (
+            SELECT 1 FROM audit_log al
+            WHERE al.action = 'task.auto_skip.superseded'
+              AND al.changed_by_name = 'system-backfill'
+              AND al.record_id = ti.id::text
+          )
+      )::int AS auto_skipped_backfill
     FROM task_instances ti
     WHERE ti.due_date BETWEEN ${from} AND ${to}
     GROUP BY ti.system
@@ -291,8 +301,20 @@ export async function loadComplianceSummary(p: ReportParameters): Promise<Report
     WHERE si.active = TRUE
     ORDER BY si.current_expiry ASC NULLS LAST
   `;
-  const total = bySystem.reduce((sum: number, r: any) => sum + r.total, 0);
+  // Enrich each row with computed `total` (post-exclusion of system-backfill auto_skips).
+  // Per V's design call (split-by-actor): system-backfill rows are excluded from the
+  // completion% denominator (one-time pile-up cleanup, doesn't punish historical neglect).
+  // Ongoing 'system' actor cron auto_skips ARE counted (we missed it twice; that hurts %).
+  const enrichedRows = bySystem.map((r: any) => ({
+    ...r,
+    total: r.total_raw - r.auto_skipped_backfill,
+  }));
+
+  const totalRaw = bySystem.reduce((sum: number, r: any) => sum + r.total_raw, 0);
+  const totalBackfill = bySystem.reduce((sum: number, r: any) => sum + r.auto_skipped_backfill, 0);
+  const total = totalRaw - totalBackfill;
   const done = bySystem.reduce((sum: number, r: any) => sum + r.done, 0);
+  const totalAutoSkipped = bySystem.reduce((sum: number, r: any) => sum + r.auto_skipped, 0);
   const completionPct = total > 0 ? Math.round((100 * done) / total) : null;
 
   return {
@@ -302,11 +324,14 @@ export async function loadComplianceSummary(p: ReportParameters): Promise<Report
       { key: "done", label: "Done" },
       { key: "overdue", label: "Overdue" },
       { key: "skipped", label: "Skipped" },
+      { key: "auto_skipped", label: "Auto-skipped" },
     ],
-    rows: bySystem,
+    rows: enrichedRows,
     summary: [
       { label: "Period", value: `${from} → ${to}` },
       { label: "Total task instances", value: total },
+      { label: "Auto-skipped (engine cleanup)", value: totalAutoSkipped },
+      { label: "Auto-skipped (one-time backfill, excluded from completion %)", value: totalBackfill },
       { label: "Completion rate", value: completionPct == null ? "—" : `${completionPct}%` },
       { label: "Statutory items active", value: stat.length },
       { label: "Statutory renewals in period", value: stat.reduce((s: number, r: any) => s + (r.renewals_in_period ?? 0), 0) },
