@@ -52,7 +52,8 @@ export async function GET() {
     FROM task_instances i
     LEFT JOIN task_templates t ON t.id = i.template_id
     LEFT JOIN devices d ON d.id = i.claimed_by_device
-    WHERE i.due_date = ${today}::date OR i.status = 'overdue'
+    WHERE i.due_date = ${today}::date
+         OR (i.status = 'overdue' AND i.due_date = (${today}::date - INTERVAL '1 day'))
     ORDER BY i.priority_weight DESC, i.system, i.task_name
   `;
 
